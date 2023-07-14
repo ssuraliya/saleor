@@ -30,7 +30,6 @@ from ...account.search import (
 from ...account.utils import store_user_address
 from ...attribute.models import (
     AssignedPageAttribute,
-    AssignedProductAttribute,
     AssignedProductAttributeValue,
     AssignedVariantAttribute,
     AssignedVariantAttributeValue,
@@ -363,12 +362,14 @@ def assign_attributes_to_page_types(
 
 
 def assign_attributes_to_products(product_attributes):
-    for value in product_attributes:
-        pk = value["pk"]
-        defaults = dict(value["fields"])
-        defaults["product_id"] = defaults.pop("product")
-        defaults["assignment_id"] = defaults.pop("assignment")
-        AssignedProductAttribute.objects.update_or_create(pk=pk, defaults=defaults)
+    pass
+    # TODOANIA: fix that
+    # for value in product_attributes:
+    #     pk = value["pk"]
+    #     defaults = dict(value["fields"])
+    #     defaults["product_id"] = defaults.pop("product")
+    #     defaults["assignment_id"] = defaults.pop("assignment")
+    #     AssignedProductAttribute.objects.update_or_create(pk=pk, defaults=defaults)
 
 
 def assign_attribute_values_to_products(values):

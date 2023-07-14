@@ -99,6 +99,8 @@ class AttributeValueUpdate(AttributeValueCreate, ModelWithExtRefMutation):
             )
             # SELECT … FOR UPDATE needs to lock rows in a consistent order
             # to avoid deadlocks between updates touching the same rows.
+
+            # TODOANIA: change to product_id
             qs = (
                 product_models.Product.objects.select_for_update(of=("self",))
                 .filter(
@@ -106,8 +108,8 @@ class AttributeValueUpdate(AttributeValueCreate, ModelWithExtRefMutation):
                     & (
                         Q(
                             Exists(
-                                instance.productassignments.filter(
-                                    product_id=OuterRef("id")
+                                instance.productvalueassignment.filter(
+                                    new_product_id=OuterRef("id")
                                 )
                             )
                         )

@@ -25,7 +25,8 @@ def update_associated_products_search_vector(attribute_value_pk: int):
     variants = ProductVariant.objects.filter(
         Exists(instance.variantassignments.filter(variant_id=OuterRef("id")))
     )
+    # TODOANIA: change to product_id
     Product.objects.filter(
-        Q(Exists(instance.productassignments.filter(product_id=OuterRef("id"))))
+        Q(Exists(instance.productvalueassignment.filter(new_product_id=OuterRef("id"))))
         | Q(Exists(variants.filter(product_id=OuterRef("id"))))
     ).update(search_index_dirty=True)
