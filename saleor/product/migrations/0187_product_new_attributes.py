@@ -21,7 +21,7 @@ def assign_attributes_to_products(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ("attribute", "0029_alter_attribute_unit"),
-        ("product", "0185_unmount_product_charge_taxes"),
+        ("product", "0186_remove_product_charge_taxes"),
     ]
 
     operations = [

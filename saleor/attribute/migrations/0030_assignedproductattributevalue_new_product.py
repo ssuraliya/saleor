@@ -56,4 +56,13 @@ class Migration(migrations.Migration):
         migrations.DeleteModel(
             name="AssignedProductAttribute",
         ),
+        migrations.RenameField(
+            model_name="assignedproductattributevalue",
+            old_name="new_product",
+            new_name="product",
+        ),
+        migrations.AlterUniqueTogether(
+            name="assignedproductattributevalue",
+            unique_together={("value", "product")},
+        ),
     ]
