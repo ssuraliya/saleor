@@ -13,7 +13,6 @@ class AssignedProductAttributeValue(SortableModel):
     )
     new_product = models.ForeignKey(
         Product,
-        null=True,
         related_name="attributevalues",
         on_delete=models.CASCADE,
     )

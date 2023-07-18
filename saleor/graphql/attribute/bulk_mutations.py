@@ -51,13 +51,6 @@ class AttributeBulkDelete(ModelBulkDeleteMutation):
 
     @classmethod
     def get_product_ids_to_update(cls, attribute_pks):
-        attribute_product = models.AttributeProduct.objects.filter(
-            attribute_id__in=attribute_pks
-        )
-        assigned_product_attrs = models.AssignedProductAttribute.objects.filter(
-            Exists(attribute_product.filter(id=OuterRef("assignment_id")))
-        )
-
         attribute_variant = models.AttributeVariant.objects.filter(
             attribute_id__in=attribute_pks
         )
@@ -68,8 +61,9 @@ class AttributeBulkDelete(ModelBulkDeleteMutation):
             Exists(assigned_variant_attrs.filter(variant_id=OuterRef("id")))
         )
 
+        # TODOANIA: change to attributes__in
         product_ids = product_models.Product.objects.filter(
-            Exists(assigned_product_attrs.filter(product_id=OuterRef("id")))
+            new_attributes__in=attribute_pks
             | Q(Exists(variants.filter(product_id=OuterRef("id"))))
         ).values_list("id", flat=True)
         return list(product_ids)
@@ -139,9 +133,6 @@ class AttributeValueBulkDelete(ModelBulkDeleteMutation):
         assigned_product_values = models.AssignedProductAttributeValue.objects.filter(
             value_id__in=value_pks
         )
-        assigned_product_attrs = models.AssignedProductAttribute.objects.filter(
-            Exists(assigned_product_values.filter(assignment_id=OuterRef("id")))
-        )
 
         assigned_variant_values = models.AssignedVariantAttributeValue.objects.filter(
             value_id__in=value_pks
@@ -153,8 +144,9 @@ class AttributeValueBulkDelete(ModelBulkDeleteMutation):
             Exists(assigned_variant_attrs.filter(variant_id=OuterRef("id")))
         )
 
+        # TODOANIA: change to product_id
         product_ids = product_models.Product.objects.filter(
-            Exists(assigned_product_attrs.filter(product_id=OuterRef("id")))
+            Exists(assigned_product_values.filter(new_product_id=OuterRef("id")))
             | Q(Exists(variants.filter(product_id=OuterRef("id"))))
         ).values_list("id", flat=True)
         return list(product_ids)

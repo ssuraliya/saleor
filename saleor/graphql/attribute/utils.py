@@ -60,9 +60,7 @@ class AttrValuesInput:
     date_time: Optional[datetime.datetime] = None
 
 
-T_INSTANCE = Union[
-    product_models.Product, product_models.ProductVariant, page_models.Page
-]
+T_INSTANCE = Union[product_models.ProductVariant, page_models.Page]
 T_INPUT_MAP = List[Tuple[attribute_models.Attribute, AttrValuesInput]]
 T_ERROR_DICT = Dict[Tuple[str, str], List]
 

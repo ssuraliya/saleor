@@ -101,7 +101,8 @@ def test_get_order_line_payload(order_line):
 
     payload = get_order_line_payload(order_line)
 
-    attributes = order_line.variant.product.attributes.all()
+    # TODOANIA: change to product.attributes
+    attributes = order_line.variant.product.new_attributes.all()
     expected_attributes_payload = []
     for attr in attributes:
         expected_attributes_payload.append(

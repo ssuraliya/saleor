@@ -33,14 +33,16 @@ def test_associate_attribute_to_product_instance_from_different_attribute(
 
 def test_associate_attribute_to_product_instance_without_values(product):
     """Ensure clearing the values from a product is properly working."""
-    old_assignment = product.attributes.first()
+    old_assignment = product.new_attributes.first()
     assert old_assignment is not None, "The product doesn't have attribute-values"
     assert old_assignment.values.count() == 1
 
     attribute = old_assignment.attribute
 
     # Clear the values
-    new_assignment = associate_attribute_values_to_instance(product, attribute)
+    associate_attribute_values_to_instance(product, attribute)
+
+    new_assignment = product.attributes.first()
 
     # Ensure the values were cleared and no new assignment entry was created
     assert new_assignment.pk == old_assignment.pk

@@ -46,15 +46,16 @@ def get_default_images_payload(images: List[ProductMedia]):
 
 
 def get_product_attributes(product):
-    attributes = product.attributes.all()
+    # TODOANIA: change to attributes
+    attributes = product.new_attributes.all()
     attributes_payload = []
     for attr in attributes:
         attributes_payload.append(
             {
                 "assignment": {
                     "attribute": {
-                        "slug": attr.assignment.attribute.slug,
-                        "name": attr.assignment.attribute.name,
+                        "slug": attr.slug,
+                        "name": attr.name,
                     }
                 },
                 "values": [

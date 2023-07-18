@@ -56,7 +56,7 @@ def serialize_checkout_lines(checkout: "Checkout") -> List[dict]:
                 "full_name": variant.display_product(),
                 "product_name": product.name,
                 "variant_name": variant.name,
-                "attributes": serialize_product_or_variant_attributes(variant),
+                "attributes": serialize_variant_attributes(variant),
             }
         )
     return data
@@ -106,9 +106,7 @@ def serialize_checkout_lines_for_tax_calculation(
     ]
 
 
-def serialize_product_or_variant_attributes(
-    product_or_variant: Union["Product", "ProductVariant"]
-) -> List[Dict]:
+def serialize_product_attributes(product: "Product") -> List[Dict]:
     data = []
 
     def _prepare_reference(attribute, attr_value):
@@ -124,7 +122,66 @@ def serialize_product_or_variant_attributes(
         reference_id = graphene.Node.to_global_id(attribute.entity_type, reference_pk)
         return reference_id
 
-    for attr in product_or_variant.attributes.all():
+    for attribute in product.new_attributes.all():
+        attr_id = graphene.Node.to_global_id("Attribute", attribute.id)
+        attr_data: Dict[Any, Any] = {
+            "name": attribute.name,
+            "input_type": attribute.input_type,
+            "slug": attribute.slug,
+            "entity_type": attribute.entity_type,
+            "unit": attribute.unit,
+            "id": attr_id,
+            "values": [],
+        }
+
+        attr_values = attribute.values.filter(
+            productvalueassignment__new_product_id=product.id
+        )
+        for attr_value in attr_values:
+            attr_slug = attr_value.slug
+            value: Dict[
+                str, Optional[Union[str, datetime, date, bool, Dict[str, Any]]]
+            ] = {
+                "name": attr_value.name,
+                "slug": attr_slug,
+                "value": attr_value.value,
+                "rich_text": attr_value.rich_text,
+                "boolean": attr_value.boolean,
+                "date_time": attr_value.date_time,
+                "date": attr_value.date_time,
+                "reference": _prepare_reference(attribute, attr_value),
+                "file": None,
+            }
+
+            if attr_value.file_url:
+                value["file"] = {
+                    "content_type": attr_value.content_type,
+                    "file_url": attr_value.file_url,
+                }
+            attr_data["values"].append(value)
+
+        data.append(attr_data)
+
+    return data
+
+
+def serialize_variant_attributes(variant: "ProductVariant") -> List[Dict]:
+    data = []
+
+    def _prepare_reference(attribute, attr_value):
+        if attribute.input_type != AttributeInputType.REFERENCE:
+            return
+        if attribute.entity_type == AttributeEntityType.PAGE:
+            reference_pk = attr_value.reference_page_id
+        elif attribute.entity_type == AttributeEntityType.PRODUCT:
+            reference_pk = attr_value.reference_product_id
+        else:
+            return None
+
+        reference_id = graphene.Node.to_global_id(attribute.entity_type, reference_pk)
+        return reference_id
+
+    for attr in variant.attributes.all():
         attr_id = graphene.Node.to_global_id("Attribute", attr.assignment.attribute_id)
         attribute = attr.assignment.attribute
         attr_data: Dict[Any, Any] = {

@@ -33,7 +33,7 @@ def associate_attribute_values_to_instance(
     validate_attribute_owns_values(attribute, values_ids)
 
     # Associate the attribute and the passed values
-    _associate_attribute_to_instance(instance, attribute, values)
+    _associate_attribute_to_instance(instance, attribute, *values)
 
 
 def validate_attribute_owns_values(attribute: Attribute, value_ids: Set[int]) -> None:
@@ -54,40 +54,59 @@ def _associate_attribute_to_instance(
 ) -> None:
     """Associate a given attribute to an instance.
 
+    For a given instance assign an attribute to it and set values based on *values.
+
+    Note: this will clean any value that already exist there.
+
     This function is under rebuilding while we move away from intermediate models
     for attribute relations
 
     See:
     https://github.com/saleor/saleor/issues/12881
     """
-    assignment: AttributeAssignmentType
     if isinstance(instance, Product):
         instance.new_attributes.add(attribute)
-        instance.attributevalues.set(values)
-        sort_assigned_attribute_values(instance, values)
 
-    elif isinstance(instance, ProductVariant):
-        attribute_rel = instance.product.product_type.attributevariant.get(
+        # TODO: move the below to a separate helper function
+        assigned_values = []
+        for value in values:
+            obj, _ = AssignedProductAttributeValue.objects.get_or_create(
+                new_product=instance, value=value
+            )
+            assigned_values.append(obj)
+
+        # assign new values and clear old relations
+        instance.attributevalues.set(assigned_values, clear=True)
+        sort_assigned_attribute_values(instance, values)
+        return
+
+    assignment: AttributeAssignmentType
+
+    if isinstance(instance, ProductVariant):
+        attribute_variant = instance.product.product_type.attributevariant.get(
             attribute_id=attribute.pk
         )
 
         assignment, _ = AssignedVariantAttribute.objects.get_or_create(
-            variant=instance, assignment=attribute_rel
+            variant=instance, assignment=attribute_variant
         )
         assignment.values.set(values)
-        sort_assigned_attribute_values_using_assignment(instance, assignment, values)
 
-    elif isinstance(instance, Page):
-        attribute_rel = instance.page_type.attributepage.get(attribute_id=attribute.pk)
+        sort_assigned_attribute_values_using_assignment(instance, assignment, values)
+        return
+
+    if isinstance(instance, Page):
+        attribute_page = instance.page_type.attributepage.get(attribute_id=attribute.pk)
+
         assignment, _ = AssignedPageAttribute.objects.get_or_create(
-            page=instance, assignment=attribute_rel
+            page=instance, assignment=attribute_page
         )
         assignment.values.set(values)
-        sort_assigned_attribute_values_using_assignment(instance, assignment, values)
-    else:
-        raise AssertionError(f"{instance.__class__.__name__} is unsupported")
 
-    return None
+        sort_assigned_attribute_values_using_assignment(instance, assignment, values)
+        return
+
+    raise AssertionError(f"{instance.__class__.__name__} is unsupported")
 
 
 def sort_assigned_attribute_values_using_assignment(

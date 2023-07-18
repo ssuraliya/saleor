@@ -3,11 +3,12 @@ from .....core.utils.editorjs import clean_editor_js
 
 
 def add_product_attribute_data_to_expected_data(data, product, attribute_ids, pk=None):
-    for assigned_attribute in product.attributes.all():
-        if assigned_attribute:
-            header = f"{assigned_attribute.attribute.slug} (product attribute)"
-            if str(assigned_attribute.attribute.pk) in attribute_ids:
-                value = get_attribute_value(assigned_attribute)
+    for attribute in product.new_attributes.all():
+        if attribute:
+            header = f"{attribute.slug} (product attribute)"
+            if str(attribute.pk) in attribute_ids:
+                value_instance = attribute.values.first()
+                value = get_attribute_value(attribute, value_instance)
                 if pk:
                     data[pk][header] = value
                 else:
@@ -19,7 +20,9 @@ def add_variant_attribute_data_to_expected_data(data, variant, attribute_ids, pk
     for assigned_attribute in variant.attributes.all():
         header = f"{assigned_attribute.attribute.slug} (variant attribute)"
         if str(assigned_attribute.attribute.pk) in attribute_ids:
-            value = get_attribute_value(assigned_attribute)
+            value_instance = assigned_attribute.values.first()
+            attribute = assigned_attribute.attribute
+            value = get_attribute_value(attribute, value_instance)
             if pk:
                 data[pk][header] = value
             else:
@@ -28,11 +31,9 @@ def add_variant_attribute_data_to_expected_data(data, variant, attribute_ids, pk
     return data
 
 
-def get_attribute_value(assigned_attribute):
-    value_instance = assigned_attribute.values.first()
+def get_attribute_value(attribute, value_instance):
     if not value_instance:
         return ""
-    attribute = assigned_attribute.attribute
     if attribute.input_type == AttributeInputType.FILE:
         value = "http://mirumee.com/media/" + value_instance.file_url
     elif attribute.input_type == AttributeInputType.REFERENCE:

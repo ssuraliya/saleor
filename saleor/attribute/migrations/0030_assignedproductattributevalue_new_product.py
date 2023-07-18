@@ -27,11 +27,20 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 null=True,
                 on_delete=django.db.models.deletion.CASCADE,
-                related_name="new_productvalueassignment",
+                related_name="attributevalues",
                 to="product.product",
             ),
         ),
         migrations.RunPython(assign_products_to_attribute_values),
+        migrations.AlterField(
+            model_name="assignedproductattributevalue",
+            name="new_product",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="attributevalues",
+                to="product.product",
+            ),
+        ),
         migrations.RemoveField(
             model_name="attributeproduct",
             name="assigned_products",
@@ -43,16 +52,6 @@ class Migration(migrations.Migration):
         migrations.RemoveField(
             model_name="assignedproductattributevalue",
             name="assignment",
-        ),
-        migrations.AlterField(
-            model_name="assignedproductattributevalue",
-            name="new_product",
-            field=models.ForeignKey(
-                null=True,
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="attributevalues",
-                to="product.product",
-            ),
         ),
         migrations.DeleteModel(
             name="AssignedProductAttribute",
