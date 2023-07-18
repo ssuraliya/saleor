@@ -3,8 +3,8 @@ from graphene import relay
 
 from ....discount import models
 from ....permission.enums import DiscountPermissions
+from ....product.models import Category, Collection, Product, ProductVariant
 from ...channel import ChannelQsContext
-from ...channel.dataloaders import ChannelByIdLoader
 from ...channel.types import (
     Channel,
     ChannelContext,
@@ -13,11 +13,10 @@ from ...channel.types import (
 )
 from ...core import ResolveInfo
 from ...core.connection import CountableConnection, create_connection_slice
-from ...core.context import get_database_connection_name
 from ...core.descriptions import ADDED_IN_31
 from ...core.doc_category import DOC_CATEGORY_DISCOUNTS
 from ...core.fields import ConnectionField, PermissionsField
-from ...core.types import ModelObjectType, NonNullList
+from ...core.types import BaseObjectType, ModelObjectType, NonNullList
 from ...meta.types import ObjectWithMetadata
 from ...product.types import (
     CategoryCountableConnection,
@@ -27,14 +26,10 @@ from ...product.types import (
 )
 from ...translations.fields import TranslationField
 from ...translations.types import SaleTranslation
-from ..dataloaders import (
-    SaleChannelListingBySaleIdAndChanneSlugLoader,
-    SaleChannelListingBySaleIdLoader,
-)
 from ..enums import SaleType
 
 
-class SaleChannelListing(ModelObjectType[models.SaleChannelListing]):
+class SaleChannelListing(BaseObjectType):
     id = graphene.GlobalID(required=True, description="The ID of the channel listing.")
     channel = graphene.Field(
         Channel,
@@ -52,12 +47,8 @@ class SaleChannelListing(ModelObjectType[models.SaleChannelListing]):
 
     class Meta:
         description = "Represents sale channel listing."
-        model = models.SaleChannelListing
         interfaces = [relay.Node]
-
-    @staticmethod
-    def resolve_channel(root: models.SaleChannelListing, info: ResolveInfo):
-        return ChannelByIdLoader(info.context).load(root.channel_id)
+        doc_category = DOC_CATEGORY_DISCOUNTS
 
 
 class Sale(ChannelContextTypeWithMetadata, ModelObjectType[models.Sale]):
@@ -121,81 +112,101 @@ class Sale(ChannelContextTypeWithMetadata, ModelObjectType[models.Sale]):
             "and are visible to all the customers."
         )
         interfaces = [relay.Node, ObjectWithMetadata]
-        model = models.Sale
+        model = models.Promotion
+        doc_category = DOC_CATEGORY_DISCOUNTS
 
     @staticmethod
-    def resolve_created(root: models.Sale, _info: ResolveInfo):
-        return root.created_at
+    def resolve_created(root: ChannelContext[models.Promotion], _info: ResolveInfo):
+        return root.node.created_at
+
+    @staticmethod
+    def resolve_type(root: ChannelContext[models.Promotion], _info: ResolveInfo):
+        if rule := root.node.rules.first():
+            return rule.reward_value_type
 
     @staticmethod
     def resolve_categories(
-        root: ChannelContext[models.Sale], info: ResolveInfo, **kwargs
+        root: ChannelContext[models.Promotion], info: ResolveInfo, **kwargs
     ):
-        qs = root.node.categories.all()
-        return create_connection_slice(qs, info, kwargs, CategoryCountableConnection)
+        from ..utils import convert_migrated_sale_catalogue_predicate
+
+        if predicates := convert_migrated_sale_catalogue_predicate(root.node):
+            if category_ids := predicates.get("categoryPredicate"):
+                qs = Category.objects.filter(id__in=category_ids)
+                return create_connection_slice(
+                    qs, info, kwargs, CategoryCountableConnection
+                )
 
     @staticmethod
-    def resolve_channel_listings(root: ChannelContext[models.Sale], info: ResolveInfo):
-        return SaleChannelListingBySaleIdLoader(info.context).load(root.node.id)
+    def resolve_channel_listings(
+        root: ChannelContext[models.Promotion], info: ResolveInfo
+    ):
+        if rule := root.node.rules.first():
+            if channel := rule.channels.first():
+                return [
+                    SaleChannelListing(
+                        # TODO what about id???
+                        id=graphene.Node.to_global_id("SaleChannelListing", rule.id),
+                        channel=channel,
+                        discount_value=rule.reward_value,
+                        currency=channel.currency_code,
+                    )
+                ]
 
     @staticmethod
     def resolve_collections(
-        root: ChannelContext[models.Sale], info: ResolveInfo, **kwargs
+        root: ChannelContext[models.Promotion], info: ResolveInfo, **kwargs
     ):
-        qs = root.node.collections.all()
-        qs = ChannelQsContext(qs=qs, channel_slug=root.channel_slug)
-        return create_connection_slice(qs, info, kwargs, CollectionCountableConnection)
+        from ..utils import convert_migrated_sale_catalogue_predicate
+
+        if predicates := convert_migrated_sale_catalogue_predicate(root.node):
+            if collection_ids := predicates.get("collectionPredicate"):
+                qs = Collection.objects.filter(id__in=collection_ids)
+                qs = ChannelQsContext(qs=qs, channel_slug=root.channel_slug)
+                return create_connection_slice(
+                    qs, info, kwargs, CollectionCountableConnection
+                )
 
     @staticmethod
     def resolve_products(
-        root: ChannelContext[models.Sale], info: ResolveInfo, **kwargs
+        root: ChannelContext[models.Promotion], info: ResolveInfo, **kwargs
     ):
-        qs = root.node.products.all()
-        qs = ChannelQsContext(qs=qs, channel_slug=root.channel_slug)
-        return create_connection_slice(qs, info, kwargs, ProductCountableConnection)
+        from ..utils import convert_migrated_sale_catalogue_predicate
+
+        if predicates := convert_migrated_sale_catalogue_predicate(root.node):
+            if product_ids := predicates.get("productPredicate"):
+                qs = Product.objects.filter(id__in=product_ids)
+                qs = ChannelQsContext(qs=qs, channel_slug=root.channel_slug)
+                return create_connection_slice(
+                    qs, info, kwargs, ProductCountableConnection
+                )
 
     @staticmethod
     def resolve_variants(
-        root: ChannelContext[models.Sale], info: ResolveInfo, **kwargs
+        root: ChannelContext[models.Promotion], info: ResolveInfo, **kwargs
     ):
-        readonly_qs = root.node.variants.using(
-            get_database_connection_name(info.context)
-        ).all()
+        from ..utils import convert_migrated_sale_catalogue_predicate
 
-        readonly_qs = ChannelQsContext(qs=readonly_qs, channel_slug=root.channel_slug)
-        return create_connection_slice(
-            readonly_qs, info, kwargs, ProductVariantCountableConnection
-        )
-
-    @staticmethod
-    def resolve_discount_value(root: ChannelContext[models.Sale], info: ResolveInfo):
-        if not root.channel_slug:
-            return None
-
-        return (
-            SaleChannelListingBySaleIdAndChanneSlugLoader(info.context)
-            .load((root.node.id, root.channel_slug))
-            .then(
-                lambda channel_listing: channel_listing.discount_value
-                if channel_listing
-                else None
-            )
-        )
+        if predicates := convert_migrated_sale_catalogue_predicate(root.node):
+            if variant_ids := predicates.get("variantPredicate"):
+                qs = ProductVariant.objects.filter(id__in=variant_ids)
+                qs = ChannelQsContext(qs=qs, channel_slug=root.channel_slug)
+                return create_connection_slice(
+                    qs, info, kwargs, ProductVariantCountableConnection
+                )
 
     @staticmethod
-    def resolve_currency(root: ChannelContext[models.Sale], info: ResolveInfo):
-        if not root.channel_slug:
-            return None
+    def resolve_discount_value(
+        root: ChannelContext[models.Promotion], _info: ResolveInfo
+    ):
+        if rule := root.node.rules.first():
+            return rule.reward_value
 
-        return (
-            SaleChannelListingBySaleIdAndChanneSlugLoader(info.context)
-            .load((root.node.id, root.channel_slug))
-            .then(
-                lambda channel_listing: channel_listing.currency
-                if channel_listing
-                else None
-            )
-        )
+    @staticmethod
+    def resolve_currency(root: ChannelContext[models.Promotion], _info: ResolveInfo):
+        if rule := root.node.rules.first():
+            if channel := rule.channels.first():
+                return channel.currency_code
 
 
 class SaleCountableConnection(CountableConnection):

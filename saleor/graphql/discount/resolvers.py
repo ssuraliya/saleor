@@ -23,16 +23,19 @@ def resolve_vouchers(info, channel_slug, **kwargs) -> ChannelQsContext:
 
 
 def resolve_sale(id, channel):
-    sale = models.Sale.objects.filter(id=id).first()
-    return ChannelContext(node=sale, channel_slug=channel) if sale else None
+    # TODO what about channel
+    # TODO use dataloaders
+    promotion = models.Promotion.objects.filter(old_sale_id=id).first()
+    return ChannelContext(node=promotion, channel_slug=channel) if promotion else None
 
 
-def resolve_sales(info, channel_slug, **kwargs) -> ChannelQsContext:
-    qs = models.Sale.objects.all()
+def resolve_sales(_info, channel_slug, **kwargs) -> ChannelQsContext:
+    qs = models.Promotion.objects.filter(old_sale_id__isnull=False)
     if channel_slug:
-        qs = qs.filter(channel_listings__channel__slug=channel_slug)
+        qs = qs.filter(rules__channels__slug=channel_slug)
 
     # DEPRECATED: remove filtering by `query` argument when it's removed from the schema
+    # TODO what about this??
     if query := kwargs.get("query"):
         qs = filter_sale_search(qs, None, query)
 

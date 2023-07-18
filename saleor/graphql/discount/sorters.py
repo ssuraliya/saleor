@@ -11,7 +11,7 @@ class SaleSortField(BaseEnum):
     START_DATE = ["start_date", "name", "pk"]
     END_DATE = ["end_date", "name", "pk"]
     VALUE = ["value", "name", "pk"]
-    TYPE = ["type", "name", "pk"]
+    TYPE = ["rules__reward_value_type", "name", "pk"]
     CREATED_AT = ["created_at", "name", "pk"]
     LAST_MODIFIED_AT = ["updated_at", "name", "pk"]
 
@@ -35,8 +35,8 @@ class SaleSortField(BaseEnum):
     def qs_with_value(queryset: QuerySet, channel_slug: str) -> QuerySet:
         return queryset.annotate(
             value=Min(
-                "channel_listings__discount_value",
-                filter=Q(channel_listings__channel__slug=str(channel_slug)),
+                "rules__reward_value",
+                filter=Q(rules__channels__slug=str(channel_slug)),
             )
         )
 

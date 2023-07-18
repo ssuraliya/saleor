@@ -67,6 +67,7 @@ def test_create_sale(
     )
 
     # then
+    breakpoint()
     content = get_graphql_content(response)
     data = content["data"]["saleCreate"]["sale"]
 
