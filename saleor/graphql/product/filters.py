@@ -209,11 +209,8 @@ def filter_products_by_attributes_values(qs, queries: T_PRODUCT_FILTER_QUERIES):
         assigned_product_attribute_values = (
             AssignedProductAttributeValue.objects.filter(value_id__in=values)
         )
-        # TODOANIA: change to product_id
         product_attribute_filter = Q(
-            Exists(
-                assigned_product_attribute_values.filter(new_product_id=OuterRef("pk"))
-            )
+            Exists(assigned_product_attribute_values.filter(product_id=OuterRef("pk")))
         )
 
         assigned_variant_attribute_values = (

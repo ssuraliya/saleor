@@ -71,7 +71,7 @@ def _associate_attribute_to_instance(
         assigned_values = []
         for value in values:
             obj, _ = AssignedProductAttributeValue.objects.get_or_create(
-                new_product=instance, value=value
+                product=instance, value=value
             )
             assigned_values.append(obj)
 

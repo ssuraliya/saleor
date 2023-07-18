@@ -78,9 +78,8 @@ class ProductBulkDelete(ModelBulkDeleteMutation):
 
     @staticmethod
     def delete_assigned_attribute_values(instance_pks):
-        # TODOANIA: change to product_id
         attribute_models.AttributeValue.objects.filter(
-            productvalueassignment__new_product_id__in=instance_pks,
+            productvalueassignment__product_id__in=instance_pks,
             attribute__input_type__in=AttributeInputType.TYPES_WITH_UNIQUE_VALUES,
         ).delete()
 

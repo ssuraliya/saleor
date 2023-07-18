@@ -135,7 +135,7 @@ def serialize_product_attributes(product: "Product") -> List[Dict]:
         }
 
         attr_values = attribute.values.filter(
-            productvalueassignment__new_product_id=product.id
+            productvalueassignment__product_id=product.id
         )
         for attr_value in attr_values:
             attr_slug = attr_value.slug

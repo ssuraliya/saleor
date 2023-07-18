@@ -11,18 +11,18 @@ class AssignedProductAttributeValue(SortableModel):
         on_delete=models.CASCADE,
         related_name="productvalueassignment",
     )
-    new_product = models.ForeignKey(
+    product = models.ForeignKey(
         Product,
         related_name="attributevalues",
         on_delete=models.CASCADE,
     )
 
     class Meta:
-        unique_together = (("value", "new_product"),)
+        unique_together = (("value", "product"),)
         ordering = ("sort_order", "pk")
 
     def get_ordering_queryset(self):
-        return self.new_product.attributevalues.all()
+        return self.product.attributevalues.all()
 
 
 class AttributeProduct(SortableModel):

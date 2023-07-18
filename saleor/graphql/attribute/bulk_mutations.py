@@ -144,9 +144,8 @@ class AttributeValueBulkDelete(ModelBulkDeleteMutation):
             Exists(assigned_variant_attrs.filter(variant_id=OuterRef("id")))
         )
 
-        # TODOANIA: change to product_id
         product_ids = product_models.Product.objects.filter(
-            Exists(assigned_product_values.filter(new_product_id=OuterRef("id")))
+            Exists(assigned_product_values.filter(product_id=OuterRef("id")))
             | Q(Exists(variants.filter(product_id=OuterRef("id"))))
         ).values_list("id", flat=True)
         return list(product_ids)

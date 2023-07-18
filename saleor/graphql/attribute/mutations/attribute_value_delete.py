@@ -66,13 +66,7 @@ class AttributeValueDelete(ModelDeleteMutation, ModelWithExtRefMutation):
         )
         # TODOANIA: change to product_id
         product_ids = product_models.Product.objects.filter(
-            Q(
-                Exists(
-                    instance.productvalueassignment.filter(
-                        new_product_id=OuterRef("id")
-                    )
-                )
-            )
+            Q(Exists(instance.productvalueassignment.filter(product_id=OuterRef("id"))))
             | Q(Exists(variants.filter(product_id=OuterRef("id"))))
         ).values_list("id", flat=True)
         return list(product_ids)
