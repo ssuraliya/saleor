@@ -66,7 +66,6 @@ def prepare_product_search_vector_value(
     if not already_prefetched:
         prefetch_related_objects([product], *PRODUCT_FIELDS_TO_PREFETCH)
 
-    # TODOANIA: change to product.attributes
     search_vectors = [
         NoValidationSearchVector(Value(product.name), config="simple", weight="A"),
         NoValidationSearchVector(
