@@ -122,7 +122,7 @@ def serialize_product_attributes(product: "Product") -> List[Dict]:
         reference_id = graphene.Node.to_global_id(attribute.entity_type, reference_pk)
         return reference_id
 
-    for attribute in product.new_attributes.all():
+    for attribute in product.attributes.all():
         attr_id = graphene.Node.to_global_id("Attribute", attribute.id)
         attr_data: Dict[Any, Any] = {
             "name": attribute.name,

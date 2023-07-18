@@ -218,10 +218,10 @@ class Product(SeoModel, ModelWithMetadata, ModelWithExternalReference):
         null=True,
         on_delete=models.SET_NULL,
     )
-    new_attributes = models.ManyToManyField(
+    attributes = models.ManyToManyField(
         "attribute.Attribute",
         blank=True,
-        related_name="new_products",
+        related_name="products",
     )
 
     objects = managers.ProductManager()

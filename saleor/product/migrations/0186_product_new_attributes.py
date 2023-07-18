@@ -33,4 +33,15 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.RunPython(assign_attributes_to_products),
+        migrations.RemoveField(
+            model_name="product",
+            name="new_attributes",
+        ),
+        migrations.AddField(
+            model_name="product",
+            name="attributes",
+            field=models.ManyToManyField(
+                blank=True, related_name="products", to="attribute.Attribute"
+            ),
+        ),
     ]

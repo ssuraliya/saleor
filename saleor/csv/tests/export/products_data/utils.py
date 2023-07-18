@@ -3,7 +3,7 @@ from .....core.utils.editorjs import clean_editor_js
 
 
 def add_product_attribute_data_to_expected_data(data, product, attribute_ids, pk=None):
-    for attribute in product.new_attributes.all():
+    for attribute in product.attributes.all():
         if attribute:
             header = f"{attribute.slug} (product attribute)"
             if str(attribute.pk) in attribute_ids:

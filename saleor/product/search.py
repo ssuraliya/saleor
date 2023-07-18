@@ -73,7 +73,7 @@ def prepare_product_search_vector_value(
             Value(product.description_plaintext), config="simple", weight="C"
         ),
         *generate_attributes_search_vector_value(
-            product.new_attributes.all()[: settings.PRODUCT_MAX_INDEXED_ATTRIBUTES]
+            product.attributes.all()[: settings.PRODUCT_MAX_INDEXED_ATTRIBUTES]
         ),
         *generate_variants_search_vector_value(product),
     ]

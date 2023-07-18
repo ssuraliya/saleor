@@ -65,7 +65,7 @@ def _associate_attribute_to_instance(
     https://github.com/saleor/saleor/issues/12881
     """
     if isinstance(instance, Product):
-        instance.new_attributes.add(attribute)
+        instance.attributes.add(attribute)
 
         # TODO: move the below to a separate helper function
         assigned_values = []

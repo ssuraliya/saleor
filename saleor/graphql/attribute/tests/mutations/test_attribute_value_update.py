@@ -93,8 +93,7 @@ def test_update_attribute_value_update_search_index_dirty_in_product(
 ):
     # given
     query = UPDATE_ATTRIBUTE_VALUE_MUTATION
-    # TODOANIA: change to attributes
-    value = product.new_attributes.all()[0].values.first()
+    value = product.attributes.all()[0].values.first()
     node_id = graphene.Node.to_global_id("AttributeValue", value.id)
     name = "Crimson name"
     variables = {"input": {"name": name}, "id": node_id}

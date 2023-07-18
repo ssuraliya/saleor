@@ -52,8 +52,7 @@ def test_delete_attribute_value_update_search_index_dirty_in_product(
     permission_manage_product_types_and_attributes,
 ):
     # given
-    # TODOANIA: change to attributes
-    value = product.new_attributes.all()[0].values.first()
+    value = product.attributes.all()[0].values.first()
     query = ATTRIBUTE_VALUE_DELETE_MUTATION
     node_id = graphene.Node.to_global_id("AttributeValue", value.id)
     variables = {"id": node_id}
