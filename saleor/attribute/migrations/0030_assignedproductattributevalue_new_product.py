@@ -16,7 +16,7 @@ def assign_products_to_attribute_values(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("product", "0186_product_new_attributes"),
+        ("product", "0187_product_new_attributes"),
         ("attribute", "0029_alter_attribute_unit"),
     ]
 
