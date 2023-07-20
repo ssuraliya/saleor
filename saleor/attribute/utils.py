@@ -71,7 +71,7 @@ def _associate_attribute_to_instance(
 
         # Clear assignments
         AssignedProductAttributeValue.objects.filter(
-            value__attribute_id=attribute.id
+            product=instance, value__attribute_id=attribute.pk
         ).delete()
 
         # Create new assignments
