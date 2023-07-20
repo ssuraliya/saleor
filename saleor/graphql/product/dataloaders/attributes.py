@@ -325,14 +325,7 @@ class SelectedAttributesByProductIdLoader(DataLoader):
 
         products = ProductByIdLoader(self.context).load_many(keys)
 
-        # TODO: remove this data loader
-        assigned_attributes = AssignedProductAttributesByProductIdLoader(
-            self.context
-        ).load_many(keys)
-
-        return Promise.all([products, assigned_attributes]).then(
-            with_products_and_assigned_attributes
-        )
+        return Promise.all([products]).then(with_products_and_assigned_attributes)
 
 
 class SelectedAttributesByProductVariantIdLoader(DataLoader):
