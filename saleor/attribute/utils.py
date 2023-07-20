@@ -20,7 +20,7 @@ def associate_attribute_values_to_instance(
     instance: T_INSTANCE,
     attribute: Attribute,
     *values: AttributeValue,
-) -> None:
+) -> Union[None, AttributeAssignmentType]:
     """Assign given attribute values to a product or variant.
 
     Note: be aware this function invokes the ``set`` method on the instance's
@@ -33,7 +33,7 @@ def associate_attribute_values_to_instance(
     validate_attribute_owns_values(attribute, values_ids)
 
     # Associate the attribute and the passed values
-    _associate_attribute_to_instance(instance, attribute, *values)
+    return _associate_attribute_to_instance(instance, attribute, *values)
 
 
 def validate_attribute_owns_values(attribute: Attribute, value_ids: Set[int]) -> None:
@@ -51,7 +51,7 @@ def _associate_attribute_to_instance(
     instance: T_INSTANCE,
     attribute: Attribute,
     *values: AttributeValue,
-) -> None:
+) -> Union[None, AttributeAssignmentType]:
     """Associate a given attribute to an instance.
 
     For a given instance assign an attribute to it and set values based on *values.
@@ -68,17 +68,20 @@ def _associate_attribute_to_instance(
         instance.attributes.add(attribute)
 
         # TODO: move the below to a separate helper function
-        assigned_values = []
+
+        # Clear assignments
+        AssignedProductAttributeValue.objects.filter(
+            value__attribute_id=attribute.id
+        ).delete()
+
+        # Create new assignments
         for value in values:
             obj, _ = AssignedProductAttributeValue.objects.get_or_create(
                 product=instance, value=value
             )
-            assigned_values.append(obj)
 
-        # assign new values and clear old relations
-        instance.attributevalues.set(assigned_values, clear=True)
-        sort_assigned_attribute_values(instance, values)
-        return
+        sort_assigned_attribute_values(instance, attribute, values)
+        return None
 
     assignment: AttributeAssignmentType
 
@@ -93,7 +96,7 @@ def _associate_attribute_to_instance(
         assignment.values.set(values)
 
         sort_assigned_attribute_values_using_assignment(instance, assignment, values)
-        return
+        return assignment
 
     if isinstance(instance, Page):
         attribute_page = instance.page_type.attributepage.get(attribute_id=attribute.pk)
@@ -104,7 +107,7 @@ def _associate_attribute_to_instance(
         assignment.values.set(values)
 
         sort_assigned_attribute_values_using_assignment(instance, assignment, values)
-        return
+        return assignment
 
     raise AssertionError(f"{instance.__class__.__name__} is unsupported")
 
@@ -135,22 +138,17 @@ def sort_assigned_attribute_values_using_assignment(
 
 
 def sort_assigned_attribute_values(
-    instance: T_INSTANCE,
+    instance: Product,
+    attribute: Attribute,
     values: Iterable[AttributeValue],
 ) -> None:
-    instance_to_value_assignment_mapping = {
-        "Product": ("attributevalues", AssignedProductAttributeValue),
-    }
-    assignment_lookup, assignment_model = instance_to_value_assignment_mapping[
-        instance.__class__.__name__
-    ]
     values_pks = [value.pk for value in values]
 
     values_assignment = list(
-        getattr(instance, assignment_lookup).select_related("value")
+        instance.attributevalues.filter(value__attribute_id=attribute.pk)
     )
-    values_assignment.sort(key=lambda e: values_pks.index(e.value.pk))
+    values_assignment.sort(key=lambda e: values_pks.index(e.value_id))
     for index, value_assignment in enumerate(values_assignment):
         value_assignment.sort_order = index
 
-    assignment_model.objects.bulk_update(values_assignment, ["sort_order"])
+    AssignedProductAttributeValue.objects.bulk_update(values_assignment, ["sort_order"])

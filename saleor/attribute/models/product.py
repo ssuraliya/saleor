@@ -1,8 +1,22 @@
+from typing import TypeVar
+
 from django.db import models
 
 from ...core.models import SortableModel
 from ...product.models import Product, ProductType
-from .base import AssociatedAttributeManager
+from .base import AssociatedAttributeManager, Attribute, BaseAttributeQuerySet
+
+T = TypeVar("T", bound=models.Model)
+
+
+class AssignedProductAttributeValueQuerySet(BaseAttributeQuerySet[T]):
+    def get_values_for_attribute(self, attribute: Attribute):
+        return self.filter(value__attribute_id=attribute.pk)
+
+
+AssignedProductAttributeValueManager = models.Manager.from_queryset(
+    AssignedProductAttributeValueQuerySet
+)
 
 
 class AssignedProductAttributeValue(SortableModel):
@@ -16,6 +30,8 @@ class AssignedProductAttributeValue(SortableModel):
         related_name="attributevalues",
         on_delete=models.CASCADE,
     )
+
+    objects = AssignedProductAttributeValueManager()
 
     class Meta:
         unique_together = (("value", "product"),)
