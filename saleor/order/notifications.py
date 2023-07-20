@@ -240,7 +240,7 @@ def get_default_order_payload(order: "Order", redirect_url: str = ""):
     lines = order.lines.prefetch_related(
         "variant__product__media",
         "variant__media",
-        "variant__product__attributes__assignment__attribute",
+        "variant__product__attributes",
         "variant__product__attributes__values",
     ).all()
     currency = order.currency
