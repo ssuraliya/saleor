@@ -99,6 +99,21 @@ ACCOUNT_DELETE_REQUESTED = (
 """
 )
 
+ACCOUNT_DELETE_CONFIRMED = (
+    fragments.CUSTOMER_DETAILS
+    + """
+    subscription{
+      event{
+        ...on AccountDeleteConfirmed{
+          user{
+            ...CustomerDetails
+          }
+        }
+      }
+    }
+"""
+)
+
 
 ADDRESS_CREATED = (
     fragments.ADDRESS_DETAILS

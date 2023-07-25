@@ -257,6 +257,14 @@ class WebhookPlugin(BasePlugin):
             redirect_url,
         )
 
+    def account_delete_confirmed(self, user: "User", previous_value: None) -> None:
+        if not self.active:
+            return previous_value
+        self._trigger_account_event(
+            WebhookEventAsyncType.ACCOUNT_DELETE_CONFIRMED,
+            user,
+        )
+
     def _trigger_address_event(self, event_type, address):
         if webhooks := get_webhooks_for_event(event_type):
             payload = self._serialize_payload(

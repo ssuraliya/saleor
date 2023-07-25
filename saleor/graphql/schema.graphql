@@ -1735,6 +1735,9 @@ enum WebhookEventTypeEnum @doc(category: "Webhooks") {
   """An account delete is requested."""
   ACCOUNT_DELETE_REQUESTED
 
+  """An account delete is confirmed."""
+  ACCOUNT_DELETE_CONFIRMED
+
   """A new address created."""
   ADDRESS_CREATED
 
@@ -2392,6 +2395,9 @@ enum WebhookEventTypeAsyncEnum @doc(category: "Webhooks") {
 
   """An account delete is requested."""
   ACCOUNT_DELETE_REQUESTED
+
+  """An account delete is confirmed."""
+  ACCOUNT_DELETE_CONFIRMED
 
   """A new address created."""
   ADDRESS_CREATED
@@ -3398,6 +3404,7 @@ enum WebhookSampleEventTypeEnum @doc(category: "Webhooks") {
   ACCOUNT_CHANGE_EMAIL_REQUESTED
   ACCOUNT_CONFIRMED
   ACCOUNT_DELETE_REQUESTED
+  ACCOUNT_DELETE_CONFIRMED
   ADDRESS_CREATED
   ADDRESS_UPDATED
   ADDRESS_DELETED
@@ -18116,13 +18123,16 @@ type Mutation {
   Remove user account. 
   
   Requires one of the following permissions: AUTHENTICATED_USER.
+  
+  Triggers the following webhook events:
+  - ACCOUNT_DELETE_CONFIRMED (async): Account was deleted.
   """
   accountDelete(
     """
     A one-time token required to remove account. Sent by email using AccountRequestDeletion mutation.
     """
     token: String!
-  ): AccountDelete @doc(category: "Users")
+  ): AccountDelete @doc(category: "Users") @webhookEventsInfo(asyncEvents: [ACCOUNT_DELETE_CONFIRMED], syncEvents: [])
 
   """
   Creates user address. 
@@ -28366,8 +28376,11 @@ type AccountRequestDeletion @doc(category: "Users") @webhookEventsInfo(asyncEven
 Remove user account. 
 
 Requires one of the following permissions: AUTHENTICATED_USER.
+
+Triggers the following webhook events:
+- ACCOUNT_DELETE_CONFIRMED (async): Account was deleted.
 """
-type AccountDelete @doc(category: "Users") {
+type AccountDelete @doc(category: "Users") @webhookEventsInfo(asyncEvents: [ACCOUNT_DELETE_CONFIRMED], syncEvents: []) {
   accountErrors: [AccountError!]! @deprecated(reason: "This field will be removed in Saleor 4.0. Use `errors` field instead.")
   errors: [AccountError!]!
   user: User
@@ -29204,6 +29217,40 @@ Event sent when account delete is requested.
 Added in Saleor 3.15.
 """
 type AccountDeleteRequested implements Event @doc(category: "Users") {
+  """Time of the event."""
+  issuedAt: DateTime
+
+  """Saleor version that triggered the event."""
+  version: String
+
+  """The user or application that triggered the event."""
+  issuingPrincipal: IssuingPrincipal
+
+  """The application receiving the webhook."""
+  recipient: App
+
+  """The URL to redirect the user after he accepts the request."""
+  redirectUrl: String
+
+  """The user the event relates to."""
+  user: User
+
+  """The channel data."""
+  channel: Channel
+
+  """The token required to confirm request."""
+  token: String
+
+  """Shop data."""
+  shop: Shop
+}
+
+"""
+Event sent when account is deleted.
+
+Added in Saleor 3.15.
+"""
+type AccountDeleteConfirmed implements Event @doc(category: "Users") {
   """Time of the event."""
   issuedAt: DateTime
 
